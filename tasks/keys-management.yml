@@ -1,0 +1,38 @@
+---
+
+- name: disable ssh keys generation in cloud-init
+  block:
+    - name: ensure that we have needed directory in /etc/cloud
+      file:
+        path: /etc/cloud/cloud.cfg.d
+        state: directory
+        mode: '0755'
+        owner: root
+        group: root
+    - name: generate override for cloud-init
+      template:
+        src: cloud-init-override.j2
+        dest: /etc/cloud/cloud.cfg.d/99_deletekeys.cfg
+        group: root
+        mode: '0644'
+
+- name: copy ssh keys
+  block:
+    - name: copy private parts of ssh keys
+      copy:
+        src: '{{ sshd_keys_source_dir }}/ssh_host_{{ item }}_key'
+        dest: '/etc/ssh/ssh_host_{{ item }}_key'
+        mode: '0600'
+        owner: root
+        group: root
+      with_items: "{{ sshd_keys_algorithms }}"
+      notify: sshd restart
+    - name: copy public parts of ssh keys
+      copy:
+        src: '{{ sshd_keys_source_dir }}/ssh_host_{{ item }}_key.pub'
+        dest: '/etc/ssh/ssh_host_{{ item }}_key.pub'
+        mode: '0644'
+        owner: root
+        group: root
+      with_items: "{{ sshd_keys_algorithms }}"
+      notify: sshd restart

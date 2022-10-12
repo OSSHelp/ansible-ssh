@@ -1,0 +1,14 @@
+---
+
+sshd_install_openssh_server: false
+sshd_conf_path: /etc/ssh/sshd_config
+
+sshd_default_params: [{ key: 'DebianBanner', value: 'no' }]
+sshd_params: []
+
+sshd_keys_source_dir: ''
+sshd_keys_algorithms:
+  - dsa
+  - ecdsa
+  - ed25519
+  - rsa

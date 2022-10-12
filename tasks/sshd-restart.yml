@@ -1,0 +1,26 @@
+---
+- name: configuration check
+  block:
+    - name: check sshd configuration
+      command: sshd -t
+      ignore_errors: true
+      register: sshd_syntax_check
+      changed_when: false
+
+    - name: show errors
+      debug:
+        msg: "{{ sshd_syntax_check.stderr }}"
+      when: sshd_syntax_check.rc != 0
+
+    - name: Notify if bad syntax
+      assert:
+        that:
+          - sshd_syntax_check.rc == 0
+        fail_msg: "sshd configuration check failed. You should check debug information above and fix the problem(s)."
+
+    - name: restart sshd
+      service:
+        name: sshd
+        state: restarted
+      when: sshd_syntax_check.rc == 0
+  when: not ansible_check_mode

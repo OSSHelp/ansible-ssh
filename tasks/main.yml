@@ -1,0 +1,34 @@
+---
+- name: create list of sshd params from default list
+  set_fact:
+    finalized_sshd_params: "{{ finalized_sshd_params|default([]) + [ item ] }}"
+  when: item.key not in sshd_params|map(attribute='key')|list
+  loop: "{{ sshd_default_params | union(sshd_params) }}"
+  no_log: yes
+
+- name: create finalized list of sshd params
+  set_fact:
+    finalized_sshd_params: "{{ finalized_sshd_params + sshd_params }}"
+  no_log: yes
+
+- name: install openssh-server
+  apt:
+    name:
+      - openssh-server
+    update_cache: true
+    cache_valid_time: 86400
+  when: sshd_install_openssh_server
+
+- name: changing sshd configuration
+  lineinfile:
+    dest: "{{ sshd_conf_path }}"
+    state: "{{ item.state|default('present') }}"
+    regexp: '^#?{{ item.key }}'
+    line: '{{ item.key }} {{ item.value }}'
+    validate: '/usr/sbin/sshd -t -f %s'
+  loop: "{{ finalized_sshd_params }}"
+  notify: sshd restart
+
+- name: include ssh keys management tasks
+  include_tasks: keys-management.yml
+  when: sshd_keys_source_dir | length > 0

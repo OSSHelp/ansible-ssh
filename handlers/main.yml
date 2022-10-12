@@ -1,0 +1,3 @@
+---
+- name: sshd restart
+  include_tasks: sshd-restart.yml
